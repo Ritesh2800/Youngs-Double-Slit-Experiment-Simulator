@@ -103,6 +103,10 @@ export default function ExperimentCanvas({
       drawWavefronts(ctx, layout, time, w, h);
     }
 
+    // CRITICAL: Force reset composite mode before screen drawing
+    // (wavefronts use additive blending which can leak on some browsers)
+    ctx.globalCompositeOperation = 'source-over';
+
     // Screen with fringes
     drawScreen(ctx, layout, h);
 
@@ -263,82 +267,82 @@ export default function ExperimentCanvas({
   const drawWavefronts = (ctx, layout, time, w, h) => {
     const { barrierX, slit1Y, slit2Y, screenX } = layout;
 
-    // Wavefront parameters
-    const waveSpeed = 60; // pixels per second
-    const maxRadius = screenX - barrierX - 20; // Stop before screen
+    const waveSpeed = 60;
+    const maxRadius = screenX - barrierX - 20;
     const waveSpacing = 16 + (wavelength - 380) / (750 - 380) * 10;
 
     ctx.save();
-    // Clip to region between barrier and screen (exclude screen area)
-    ctx.beginPath();
-    ctx.rect(barrierX + 6, 0, screenX - barrierX - 26, h);
-    ctx.clip();
-
-    const numWaves = Math.ceil(maxRadius / waveSpacing) + 5;
-    const offset = (time * waveSpeed) % waveSpacing;
-
-    // Draw wavefronts with additive blending for interference
-    ctx.globalCompositeOperation = 'screen';
-
-    for (let i = 0; i < numWaves; i++) {
-      const radius = i * waveSpacing + offset;
-      if (radius < 2 || radius > maxRadius) continue;
-
-      const distFade = 1 - radius / maxRadius;
-      const alpha = Math.max(0, 0.25 * distFade);
-
-      ctx.strokeStyle = rgbToString({ ...color, a: alpha });
-      ctx.lineWidth = 1.5;
-
-      // Wavefront from slit 1
+    try {
+      // Clip to region between barrier and screen (exclude screen area)
       ctx.beginPath();
-      ctx.arc(barrierX, slit1Y, radius, -Math.PI * 0.48, Math.PI * 0.48);
-      ctx.stroke();
+      ctx.rect(barrierX + 6, 0, screenX - barrierX - 46, h);
+      ctx.clip();
 
-      // Wavefront from slit 2
-      ctx.beginPath();
-      ctx.arc(barrierX, slit2Y, radius, -Math.PI * 0.48, Math.PI * 0.48);
-      ctx.stroke();
-    }
+      const numWaves = Math.ceil(maxRadius / waveSpacing) + 5;
+      const offset = (time * waveSpeed) % waveSpacing;
 
-    // Highlight constructive interference zones with bright dots
-    ctx.globalCompositeOperation = 'lighter';
-    const slitDist = slit2Y - slit1Y;
-    const maxDotRadius = maxRadius * 0.8;
+      ctx.globalCompositeOperation = 'screen';
 
-    for (let i = 0; i < numWaves; i++) {
-      const r1 = i * waveSpacing + offset;
-      if (r1 < 10 || r1 > maxDotRadius) continue;
+      for (let i = 0; i < numWaves; i++) {
+        const radius = i * waveSpacing + offset;
+        if (radius < 2 || radius > maxRadius) continue;
 
-      for (let j = 0; j < numWaves; j++) {
-        const r2 = j * waveSpacing + offset;
-        if (r2 < 10 || r2 > maxDotRadius) continue;
+        const distFade = 1 - radius / maxRadius;
+        const alpha = Math.max(0, 0.25 * distFade);
 
-        const d = slitDist;
-        if (Math.abs(r1 - r2) > d || r1 + r2 < d) continue;
+        ctx.strokeStyle = rgbToString({ ...color, a: alpha });
+        ctx.lineWidth = 1.5;
 
-        const a_val = (r1 * r1 - r2 * r2 + d * d) / (2 * d);
-        const hSq = r1 * r1 - a_val * a_val;
-        if (hSq < 0) continue;
-        const hVal = Math.sqrt(hSq);
+        ctx.beginPath();
+        ctx.arc(barrierX, slit1Y, radius, -Math.PI * 0.48, Math.PI * 0.48);
+        ctx.stroke();
 
-        const iy = slit1Y + a_val;
-        const ix1 = barrierX + hVal;
+        ctx.beginPath();
+        ctx.arc(barrierX, slit2Y, radius, -Math.PI * 0.48, Math.PI * 0.48);
+        ctx.stroke();
+      }
 
-        if (ix1 > barrierX + 8 && ix1 < screenX - 30) {
-          const distFromCenter = Math.sqrt((ix1 - barrierX) ** 2 + (iy - (slit1Y + slit2Y) / 2) ** 2);
-          const distFade1 = 1 - Math.min(1, distFromCenter / maxDotRadius);
-          const dotAlpha = 0.12 * distFade1;
-          ctx.fillStyle = rgbToString({ ...color, a: dotAlpha });
-          ctx.beginPath();
-          ctx.arc(ix1, iy, 2.5, 0, Math.PI * 2);
-          ctx.fill();
+      // Constructive interference dots
+      ctx.globalCompositeOperation = 'lighter';
+      const slitDist = slit2Y - slit1Y;
+      const maxDotRadius = maxRadius * 0.75;
+
+      for (let i = 0; i < numWaves; i++) {
+        const r1 = i * waveSpacing + offset;
+        if (r1 < 10 || r1 > maxDotRadius) continue;
+
+        for (let j = 0; j < numWaves; j++) {
+          const r2 = j * waveSpacing + offset;
+          if (r2 < 10 || r2 > maxDotRadius) continue;
+
+          const d = slitDist;
+          if (Math.abs(r1 - r2) > d || r1 + r2 < d) continue;
+
+          const a_val = (r1 * r1 - r2 * r2 + d * d) / (2 * d);
+          const hSq = r1 * r1 - a_val * a_val;
+          if (hSq < 0) continue;
+          const hVal = Math.sqrt(hSq);
+
+          const iy = slit1Y + a_val;
+          const ix1 = barrierX + hVal;
+
+          if (ix1 > barrierX + 8 && ix1 < screenX - 50) {
+            const distFromCenter = Math.sqrt((ix1 - barrierX) ** 2 + (iy - (slit1Y + slit2Y) / 2) ** 2);
+            const distFade1 = 1 - Math.min(1, distFromCenter / maxDotRadius);
+            const dotAlpha = 0.12 * distFade1;
+            ctx.fillStyle = rgbToString({ ...color, a: dotAlpha });
+            ctx.beginPath();
+            ctx.arc(ix1, iy, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
       }
+    } finally {
+      // ALWAYS restore - even if an error occurs above
+      ctx.restore();
+      // Belt-and-suspenders: force composite mode back
+      ctx.globalCompositeOperation = 'source-over';
     }
-
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.restore();
   };
 
   const drawScreen = (ctx, layout, h) => {
@@ -346,9 +350,16 @@ export default function ExperimentCanvas({
     const screenHeight = h - 80;
     const screenTop = 40;
 
-    // Clear the screen area completely first (removes any wavefront bleed)
+    // Isolate screen rendering completely
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+
+    // clearRect ALWAYS clears regardless of composite mode
+    ctx.clearRect(screenX - 40, screenTop - 5, 80, screenHeight + 10);
+
+    // Black background behind screen area
     ctx.fillStyle = '#000000';
-    ctx.fillRect(screenX - 35, screenTop - 2, 70, screenHeight + 4);
+    ctx.fillRect(screenX - 40, screenTop - 5, 80, screenHeight + 10);
 
     // Screen backing
     ctx.fillStyle = '#080810';
@@ -364,21 +375,30 @@ export default function ExperimentCanvas({
       const yPhys = ((screenPos - centerY) / (screenHeight / 2)) * physicsParams.L * 0.02;
       const { intensity } = calculateIntensity(yPhys, physicsParams);
 
-      // Clamp to valid range and handle NaN
-      const safeIntensity = (Number.isFinite(intensity) && intensity >= 0) ? Math.min(intensity, 1) : 0;
-      const bright = Math.pow(safeIntensity, 0.5);
-      ctx.fillStyle = rgbToString({ ...color, a: bright * 0.9 });
+      // Robust NaN/invalid clamping
+      let safeIntensity = 0;
+      if (Number.isFinite(intensity) && intensity > 0) {
+        safeIntensity = Math.min(intensity, 1);
+      }
+      const bright = Math.sqrt(safeIntensity);
+      const alpha = bright * 0.9;
+
+      // Set fillStyle fresh for every pixel row
+      ctx.fillStyle = `rgba(${color.r},${color.g},${color.b},${alpha.toFixed(4)})`;
       ctx.fillRect(screenX - 6, screenPos, 12, 1);
     }
 
-    // Subtle screen glow (only where fringes are bright)
-    const glowGrad = ctx.createLinearGradient(screenX - 20, 0, screenX + 20, 0);
+    // Subtle screen glow
+    const glowGrad = ctx.createLinearGradient(screenX - 15, 0, screenX + 15, 0);
     glowGrad.addColorStop(0, 'transparent');
-    glowGrad.addColorStop(0.3, rgbToString({ ...color, a: 0.03 }));
-    glowGrad.addColorStop(0.5, rgbToString({ ...color, a: 0.06 }));
-    glowGrad.addColorStop(0.7, rgbToString({ ...color, a: 0.03 }));
+    glowGrad.addColorStop(0.4, `rgba(${color.r},${color.g},${color.b},0.03)`);
+    glowGrad.addColorStop(0.5, `rgba(${color.r},${color.g},${color.b},0.05)`);
+    glowGrad.addColorStop(0.6, `rgba(${color.r},${color.g},${color.b},0.03)`);
     glowGrad.addColorStop(1, 'transparent');
-    ctx.fillRect(screenX - 20, screenTop, 40, screenHeight);
+    ctx.fillStyle = glowGrad;
+    ctx.fillRect(screenX - 15, screenTop, 30, screenHeight);
+
+    ctx.restore();
 
     // Label
     ctx.fillStyle = 'rgba(148, 163, 184, 0.7)';
