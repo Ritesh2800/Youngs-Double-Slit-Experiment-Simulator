@@ -265,19 +265,19 @@ export default function ExperimentCanvas({
 
     // Wavefront parameters
     const waveSpeed = 60; // pixels per second
-    const maxRadius = screenX - barrierX + 50;
-    const waveSpacing = 16 + (wavelength - 380) / (750 - 380) * 10; // vary with wavelength
+    const maxRadius = screenX - barrierX - 20; // Stop before screen
+    const waveSpacing = 16 + (wavelength - 380) / (750 - 380) * 10;
 
     ctx.save();
-    // Clip to region after barrier
+    // Clip to region between barrier and screen (exclude screen area)
     ctx.beginPath();
-    ctx.rect(barrierX + 6, 0, w - barrierX - 6, h);
+    ctx.rect(barrierX + 6, 0, screenX - barrierX - 26, h);
     ctx.clip();
 
     const numWaves = Math.ceil(maxRadius / waveSpacing) + 5;
     const offset = (time * waveSpeed) % waveSpacing;
 
-    // First pass: draw wavefronts with additive blending for interference
+    // Draw wavefronts with additive blending for interference
     ctx.globalCompositeOperation = 'screen';
 
     for (let i = 0; i < numWaves; i++) {
@@ -301,24 +301,20 @@ export default function ExperimentCanvas({
       ctx.stroke();
     }
 
-    // Second pass: highlight constructive interference zones with bright dots
+    // Highlight constructive interference zones with bright dots
     ctx.globalCompositeOperation = 'lighter';
-    const slitMidY = (slit1Y + slit2Y) / 2;
-    const slitDist = slit2Y - slit1Y; // pixel distance between slits
+    const slitDist = slit2Y - slit1Y;
+    const maxDotRadius = maxRadius * 0.8;
 
     for (let i = 0; i < numWaves; i++) {
       const r1 = i * waveSpacing + offset;
-      if (r1 < 10 || r1 > maxRadius * 0.85) continue;
+      if (r1 < 10 || r1 > maxDotRadius) continue;
 
       for (let j = 0; j < numWaves; j++) {
         const r2 = j * waveSpacing + offset;
-        if (r2 < 10 || r2 > maxRadius * 0.85) continue;
+        if (r2 < 10 || r2 > maxDotRadius) continue;
 
-        // Find intersection points of two circles
-        // Circle 1 center: (barrierX, slit1Y), radius r1
-        // Circle 2 center: (barrierX, slit2Y), radius r2
-        // Same x, different y
-        const d = slitDist; // distance between centers
+        const d = slitDist;
         if (Math.abs(r1 - r2) > d || r1 + r2 < d) continue;
 
         const a_val = (r1 * r1 - r2 * r2 + d * d) / (2 * d);
@@ -326,15 +322,13 @@ export default function ExperimentCanvas({
         if (hSq < 0) continue;
         const hVal = Math.sqrt(hSq);
 
-        // Intersection points
         const iy = slit1Y + a_val;
         const ix1 = barrierX + hVal;
-        const ix2 = barrierX - hVal;
 
-        // Only draw points to the right of barrier
-        const distFade1 = 1 - Math.min(1, Math.sqrt((ix1 - barrierX) ** 2 + (iy - slitMidY) ** 2) / maxRadius);
-        if (ix1 > barrierX + 8 && ix1 < screenX - 20) {
-          const dotAlpha = 0.15 * distFade1;
+        if (ix1 > barrierX + 8 && ix1 < screenX - 30) {
+          const distFromCenter = Math.sqrt((ix1 - barrierX) ** 2 + (iy - (slit1Y + slit2Y) / 2) ** 2);
+          const distFade1 = 1 - Math.min(1, distFromCenter / maxDotRadius);
+          const dotAlpha = 0.12 * distFade1;
           ctx.fillStyle = rgbToString({ ...color, a: dotAlpha });
           ctx.beginPath();
           ctx.arc(ix1, iy, 2.5, 0, Math.PI * 2);
@@ -352,6 +346,10 @@ export default function ExperimentCanvas({
     const screenHeight = h - 80;
     const screenTop = 40;
 
+    // Clear the screen area completely first (removes any wavefront bleed)
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(screenX - 35, screenTop - 2, 70, screenHeight + 4);
+
     // Screen backing
     ctx.fillStyle = '#080810';
     ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
@@ -366,19 +364,21 @@ export default function ExperimentCanvas({
       const yPhys = ((screenPos - centerY) / (screenHeight / 2)) * physicsParams.L * 0.02;
       const { intensity } = calculateIntensity(yPhys, physicsParams);
 
-      const bright = Math.pow(intensity, 0.5); // gamma correction for visibility
+      // Clamp to valid range and handle NaN
+      const safeIntensity = (Number.isFinite(intensity) && intensity >= 0) ? Math.min(intensity, 1) : 0;
+      const bright = Math.pow(safeIntensity, 0.5);
       ctx.fillStyle = rgbToString({ ...color, a: bright * 0.9 });
       ctx.fillRect(screenX - 6, screenPos, 12, 1);
     }
 
-    // Screen glow
-    const glowGrad = ctx.createLinearGradient(screenX - 30, 0, screenX + 30, 0);
+    // Subtle screen glow (only where fringes are bright)
+    const glowGrad = ctx.createLinearGradient(screenX - 20, 0, screenX + 20, 0);
     glowGrad.addColorStop(0, 'transparent');
-    glowGrad.addColorStop(0.3, rgbToString({ ...color, a: 0.05 }));
-    glowGrad.addColorStop(0.5, rgbToString({ ...color, a: 0.1 }));
-    glowGrad.addColorStop(0.7, rgbToString({ ...color, a: 0.05 }));
+    glowGrad.addColorStop(0.3, rgbToString({ ...color, a: 0.03 }));
+    glowGrad.addColorStop(0.5, rgbToString({ ...color, a: 0.06 }));
+    glowGrad.addColorStop(0.7, rgbToString({ ...color, a: 0.03 }));
     glowGrad.addColorStop(1, 'transparent');
-    ctx.fillRect(screenX - 30, screenTop, 60, screenHeight);
+    ctx.fillRect(screenX - 20, screenTop, 40, screenHeight);
 
     // Label
     ctx.fillStyle = 'rgba(148, 163, 184, 0.7)';
