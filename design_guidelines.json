@@ -1,0 +1,87 @@
+{
+  "theme": "dark",
+  "archetype": "7 (Electric & Neon) - Oscilloscope/Lab Aesthetic",
+  "typography": {
+    "fonts": {
+      "heading": "Azeret Mono",
+      "body": "IBM Plex Sans",
+      "mono": "JetBrains Mono"
+    },
+    "hierarchy": {
+      "h1": "text-2xl sm:text-3xl font-heading tracking-tight text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]",
+      "h2": "text-xl sm:text-2xl font-heading tracking-tight text-zinc-100",
+      "h3": "text-lg sm:text-xl font-heading text-zinc-300",
+      "body": "text-sm sm:text-base font-body text-zinc-400 leading-relaxed",
+      "label": "text-xs font-mono uppercase tracking-[0.2em] text-cyan-500/80"
+    }
+  },
+  "colors": {
+    "background": "#000000",
+    "surface": "#09090B",
+    "surface_glass": "bg-black/60 backdrop-blur-xl",
+    "border": {
+      "default": "border-zinc-800",
+      "neon": "border-cyan-500/50",
+      "active": "border-cyan-400"
+    },
+    "primary": "#22d3ee",
+    "primary_glow": "rgba(34,211,238,0.5)",
+    "secondary": "#39ff14",
+    "text": {
+      "primary": "#f8fafc",
+      "secondary": "#94a3b8",
+      "muted": "#475569"
+    }
+  },
+  "layout": {
+    "strategy": "The Control Room Grid",
+    "container": "min-h-screen bg-black text-slate-200 p-2 md:p-4 lg:p-6 font-body selection:bg-cyan-500/30",
+    "grid_system": "grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 h-full min-h-[calc(100vh-3rem)]",
+    "sections": {
+      "header": "col-span-full flex items-center justify-between pb-4 border-b border-zinc-900",
+      "canvas_hero": "col-span-1 lg:col-span-8 lg:row-span-2 relative rounded-xl border border-zinc-800 bg-zinc-950 overflow-hidden ring-1 ring-white/5",
+      "graph_panel": "col-span-1 lg:col-span-4 rounded-xl border border-zinc-800 bg-zinc-950 p-4 ring-1 ring-white/5",
+      "controls_panel": "col-span-1 lg:col-span-4 rounded-xl border border-zinc-800 bg-zinc-950 p-6 ring-1 ring-white/5"
+    }
+  },
+  "components": {
+    "slider": {
+      "track": "bg-zinc-800 h-1.5 rounded-full overflow-hidden",
+      "range": "bg-cyan-400",
+      "thumb": "block h-4 w-4 rounded-full border-2 border-cyan-400 bg-black ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 shadow-[0_0_10px_rgba(34,211,238,0.8)]"
+    },
+    "card": {
+      "base": "rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-100 shadow-sm",
+      "glass": "rounded-xl border border-white/10 bg-black/40 backdrop-blur-md"
+    },
+    "button": {
+      "primary": "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-cyan-950 text-cyan-400 border border-cyan-800 hover:bg-cyan-900 hover:text-cyan-300"
+    }
+  },
+  "visual_enhancers": {
+    "canvas_background": "absolute inset-0 bg-[linear-gradient(rgba(34,211,238,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.05)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none",
+    "scanlines": "absolute inset-0 pointer-events-none bg-[linear-gradient(to_bottom,transparent_50%,rgba(0,0,0,0.25)_50%)] bg-[size:100%_4px] opacity-20",
+    "glow_effects": "Use CSS drop-shadow and box-shadow heavily for the neon elements to give them an optical bloom.",
+    "CRT_flicker": "Subtle keyframe animation on the graph line to simulate analog phosphor decay."
+  },
+  "motion": {
+    "hover": "transition-all duration-200 ease-in-out",
+    "canvas_loop": "requestAnimationFrame with delta-time calculation to ensure smooth wavefront propagation regardless of refresh rate."
+  },
+  "icons": {
+    "library": "lucide-react",
+    "style": "Stroke width 1.5, text-cyan-500"
+  },
+  "instructions_to_main_agent": [
+    "1. HYBRID ARCHITECTURE: The UI uses standard React/Tailwind/Shadcn components for the layout, sliders, and graph wrapper, but the ACTUAL physics simulation MUST be rendered purely in a canvas element. Do not use DOM elements for wavefronts or the laser beam. Use CanvasRenderingContext2D.",
+    "2. WAVELENGTH TO COLOR: Implement a function to convert the wavelength slider value (e.g., 400nm to 700nm) into a visible RGB color for the laser and wavefronts. 400nm = Violet, 500nm = Green, 600nm = Orange, 700nm = Red.",
+    "3. HUYGENS WAVEFRONTS: In the canvas update loop, emit expanding concentric circles from the two slits. Use globalCompositeOperation = 'screen' or 'lighter' to allow constructive interference where the wave circles overlap.",
+    "4. INTENSITY GRAPH: Calculate the theoretical intensity pattern on the right-side graph. Use the formula: I(theta) = I_0 * cos^2(pi*d*sin(theta)/lambda) * sinc^2(pi*a*sin(theta)/lambda). Plot this on a canvas or using Recharts with a neon stroke.",
+    "5. INTERACTIVE DRAGGING: Add mouse/touch event listeners to the canvas to allow users to drag the 'barrier' (y-axis) or the 'screen' (y-axis) to change distances visually.",
+    "6. SHADCN SLIDERS: heavily customize the Shadcn slider thumb to glow like an LED (use the thumb classes provided in the components section).",
+    "7. PERFORMANCE: Ensure the canvas rendering loop cleans up properly on component unmount and doesn't memory leak. Use off-screen canvas if wave calculation becomes too heavy.",
+    "8. DRAG STATE: Show visual feedback (cursor change to grab / grabbing, highlight border of barrier) when a canvas element is draggable.",
+    "9. RESPONSIVENESS: Ensure the canvas resizes properly via a ResizeObserver. Update the internal coordinate system so the physics don't break on window resize.",
+    "10. TESTING: Apply data-testid to all sliders (e.g., data-testid='slider-wavelength') and control panels to adhere to testing requirements."
+  ]
+}
