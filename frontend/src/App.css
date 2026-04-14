@@ -1,34 +1,129 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* YDSE Simulation Styles - Oscilloscope/Neon Aesthetic */
+
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500;600&display=swap');
+
+.ydse-app {
+  font-family: 'IBM Plex Sans', sans-serif;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+.font-heading {
+  font-family: 'Azeret Mono', monospace;
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+.font-body {
+  font-family: 'IBM Plex Sans', sans-serif;
 }
 
-.App-link {
-    color: #61dafb;
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* Custom range slider */
+.ydse-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: #18181b;
+  outline: none;
+  cursor: pointer;
+}
+
+.ydse-slider::-webkit-slider-track {
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(
+    to right,
+    var(--slider-color, #22d3ee) 0%,
+    var(--slider-color, #22d3ee) var(--progress, 50%),
+    #27272a var(--progress, 50%),
+    #27272a 100%
+  );
+}
+
+.ydse-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #000;
+  border: 2px solid var(--slider-color, #22d3ee);
+  cursor: grab;
+  box-shadow: 0 0 10px var(--slider-color, rgba(34, 211, 238, 0.8)),
+              0 0 20px var(--slider-color, rgba(34, 211, 238, 0.3));
+  transition: box-shadow 0.2s ease;
+}
+
+.ydse-slider::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 14px var(--slider-color, rgba(34, 211, 238, 1)),
+              0 0 28px var(--slider-color, rgba(34, 211, 238, 0.5));
+}
+
+.ydse-slider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+}
+
+.ydse-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: #27272a;
+}
+
+.ydse-slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--slider-color, #22d3ee);
+}
+
+.ydse-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #000;
+  border: 2px solid var(--slider-color, #22d3ee);
+  cursor: grab;
+  box-shadow: 0 0 10px var(--slider-color, rgba(34, 211, 238, 0.8)),
+              0 0 20px var(--slider-color, rgba(34, 211, 238, 0.3));
+}
+
+.ydse-slider::-moz-range-thumb:hover {
+  box-shadow: 0 0 14px var(--slider-color, rgba(34, 211, 238, 1)),
+              0 0 28px var(--slider-color, rgba(34, 211, 238, 0.5));
+}
+
+/* Neon glow animation for laser pulse */
+@keyframes laserPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* CRT flicker for graph */
+@keyframes crtFlicker {
+  0% { opacity: 1; }
+  5% { opacity: 0.98; }
+  10% { opacity: 1; }
+  15% { opacity: 0.97; }
+  20% { opacity: 1; }
+}
+
+/* Tabular numbers for readouts */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Smooth scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #09090b;
+}
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
 }
